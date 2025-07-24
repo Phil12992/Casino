@@ -107,11 +107,14 @@ if 'current_game' not in st.session_state:
 # Login-Bereich
 if not st.session_state.name:
     st.title("🎰 Willkommen im Premium Casino")
-    name = st.text_input("Bitte gib deinen Namen ein:")
+    name_input = st.text_input("Bitte gib deinen Namen ein:")
     if st.button("Spiel starten"):
-        st.session_state.name = name
-        st.session_state.punkte = load_points(name)
-        st.experimental_rerun()
+        if name_input:  # Nur fortfahren, wenn ein Name eingegeben wurde
+            st.session_state.name = name_input
+            st.session_state.punkte = load_points(name_input)
+            st.experimental_rerun()
+        else:
+            st.warning("Bitte gib einen Namen ein!")
 else:
     # Hauptmenü
     st.title(f"🎰 Willkommen, {st.session_state.name}!")
