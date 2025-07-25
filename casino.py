@@ -1,8 +1,38 @@
 import streamlit as st
-from random import randint
+from random import randint, choice
 import os
+import hashlib
 
-# Punktespeicherung
+# ==== STREAMLIT SETUP ====
+st.set_page_config(page_title="🎰 Streamlit Casino", page_icon="🎲")
+st.title("🎰 Willkommen im Online Casino!")
+
+# ==== HELPER FUNKTIONEN ====
+def hash_passwort(passwort):
+    return hashlib.sha256(passwort.encode()).hexdigest()
+
+def check_login(name, passwort):
+    if not os.path.exists("users.txt"):
+        return False
+    with open("users.txt", "r") as f:
+        for line in f:
+            user, hashed = line.strip().split(":")
+            if user == name and hashed == hash_passwort(passwort):
+                return True
+    return False
+
+def registrieren(name, passwort):
+    if not os.path.exists("users.txt"):
+        with open("users.txt", "w"): pass
+    with open("users.txt", "r") as f:
+        for line in f:
+            user, _ = line.strip().split(":")
+            if user == name:
+                return False
+    with open("users.txt", "a") as f:
+        f.write(f"{name}:{hash_passwort(passwort)}\n")
+    return True
+
 def load_points(name):
     if not os.path.exists("points.txt"):
         return 20
@@ -19,122 +49,132 @@ def save_points(name, punkte):
         with open("points.txt", "r") as f:
             for line in f:
                 if line.startswith(name + ":"):
-                    lines.append(f"{name}: {punkte}\n")
+                    lines.append(f"{name}:{punkte}\n")
                     gefunden = True
                 else:
                     lines.append(line)
     if not gefunden:
-        lines.append(f"{name}: {punkte}\n")
+        lines.append(f"{name}:{punkte}\n")
     with open("points.txt", "w") as f:
         f.writelines(lines)
 
-# Streamlit UI
-st.set_page_config(page_title="🎰 Online Casino", page_icon="🎲", layout="centered")
-st.title("🎰 Willkommen im Online-Casino!")
+# ==== LOGIN ====
+if "eingeloggt" not in st.session_state:
+    st.session_state.eingeloggt = False
 
-name = st.text_input("🧑 Bitte gib deinen Namen ein:", key="name_input")
+if not st.session_state.eingeloggt:
+    tab1, tab2 = st.tabs(["🔐 Login", "📝 Registrieren"])
+    with tab1:
+        name = st.text_input("Benutzername")
+        passwort = st.text_input("Passwort", type="password")
+        if st.button("🔓 Einloggen"):
+            if check_login(name, passwort):
+                st.success("✅ Login erfolgreich!")
+                st.session_state.name = name
+                st.session_state.eingeloggt = True
+                st.session_state.punkte = load_points(name)
+                st.session_state.bombenzahlen = list(range(1, 11))
+                st.rerun()
+            else:
+                st.error("❌ Falscher Benutzername oder Passwort")
 
-if name:
-    if "punkte" not in st.session_state:
-        st.session_state.punkte = load_points(name)
+    with tab2:
+        neuer_name = st.text_input("Neuer Benutzername")
+        neues_pw = st.text_input("Neues Passwort", type="password")
+        if st.button("🆕 Konto erstellen"):
+            if registrieren(neuer_name, neues_pw):
+                st.success("✅ Registrierung erfolgreich! Bitte einloggen.")
+            else:
+                st.error("⚠️ Benutzername bereits vergeben.")
 
-    st.success(f"Hallo {name}, du hast aktuell {st.session_state.punkte} Punkte.")
+# ==== SPIELE ====
+else:
+    st.success(f"🎉 Eingeloggt als `{st.session_state.name}`")
+    st.markdown(f"**Punktestand:** `{st.session_state.punkte}` Punkte")
 
-    spiel = st.radio("🎮 Wähle dein Spiel:", [
-        "Würfel-Spiel 🎲",
-        "Münzwurf 🪙",
-        "Slot Maschine 🎰",
-        "Bombenzahl 💣",
-        "Greifautomat 🤖",
-        "Punktestand anzeigen 📊"
+    spiel = st.selectbox("Wähle ein Spiel:", [
+        "🎲 Würfel-Spiel",
+        "🪙 Münzwurf",
+        "🎰 Slot Maschine",
+        "💣 Bombenzahl",
+        "🤖 Greifautomat",
+        "📊 Punktestand speichern"
     ])
 
-    st.markdown("---")
-
-    if spiel == "Würfel-Spiel 🎲":
-        st.session_state.punkte -= 1
-        save_points(name, st.session_state.punkte)
-        zahl1 = st.number_input("Wähle eine Zahl von 1 bis 6", 1, 6, step=1)
-        if st.button("🎲 Würfeln!"):
-            ergebnis = [randint(1, 6) for _ in range(6)]
-            anzahl = ergebnis.count(int(zahl1))
-            if anzahl == 0:
-                p1 = 0
-            elif anzahl < 4:
-                p1 = 1
-            elif anzahl < 6:
-                p1 = 2
-            else:
-                p1 = 5
-            st.session_state.punkte += p1
-            save_points(name, st.session_state.punkte)
-            st.info(f"🎯 Geworfen: {ergebnis}")
-            st.success(f"Die Zahl {zahl1} kam {anzahl}x vor → +{p1} Punkte")
-
-    elif spiel == "Münzwurf 🪙":
-        st.session_state.punkte -= 1
-        save_points(name, st.session_state.punkte)
-        wahl = st.radio("Kopf oder Zahl?", ["Kopf", "Zahl"])
-        if st.button("🪙 Münze werfen"):
-            ergebnis = randint(1, 2)
-            ergebnis_text = "Kopf" if ergebnis == 1 else "Zahl"
-            if wahl == ergebnis_text:
-                st.session_state.punkte += 1
-                st.success(f"✅ Die Münze zeigt {ergebnis_text}. Du gewinnst 1 Punkt!")
-            else:
-                st.warning(f"❌ Die Münze zeigt {ergebnis_text}. Leider kein Punkt.")
-            save_points(name, st.session_state.punkte)
-
-    elif spiel == "Slot Maschine 🎰":
-        if st.button("🎰 Hebel ziehen (-2 Punkte)"):
-            st.session_state.punkte -= 2
-            zahlen = [randint(1, 6) for _ in range(3)]
-            if zahlen[0] == zahlen[1] == zahlen[2]:
-                st.session_state.punkte += 10
-                st.balloons()
-                st.success(f"💥 JACKPOT! Zahlen: {zahlen} → +10 Punkte")
-            else:
-                st.warning(f"🤏 Keine drei gleichen. Gezogene Zahlen: {zahlen}")
-            save_points(name, st.session_state.punkte)
-
-    elif spiel == "Bombenzahl 💣":
-        if "bombenzahl_num" not in st.session_state:
-            st.session_state.bombenzahl_num = randint(1, 10)
-
-        zahl = st.number_input("Wähle eine Zahl zwischen 1 und 10", 1, 10, step=1)
-        if st.button("💣 Entschärfen"):
-            if int(zahl) == st.session_state.bombenzahl_num:
-                st.session_state.punkte -= 1
-                st.warning("💥 Die Bombe ist explodiert! -1 Punkt")
-                st.session_state.bombenzahl_num = randint(1, 10)
-            else:
-                st.session_state.punkte += 1
-                st.success("✅ Nicht explodiert! +1 Punkt")
-            save_points(name, st.session_state.punkte)
-
-    elif spiel == "Greifautomat 🤖":
-        if "greif_x" not in st.session_state:
-            st.session_state.greif_x = randint(1, 10)
-            st.session_state.greif_y = randint(1, 10)
-            st.session_state.greif_versuche = 3
-
-        x = st.number_input("🕹️ Zahl für X (1–10)", 1, 10, step=1, key="x")
-        y = st.number_input("🕹️ Zahl für Y (1–10)", 1, 10, step=1, key="y")
-
-        if st.button("🤖 Greifen"):
-            if int(x) == st.session_state.greif_x and int(y) == st.session_state.greif_y:
+    if spiel == "🎲 Würfel-Spiel":
+        if st.button("🎲 Würfeln"):
+            wurf = randint(1, 6)
+            st.write(f"Du hast eine **{wurf}** geworfen.")
+            if wurf == 6:
+                st.success("Jackpot! +5 Punkte")
                 st.session_state.punkte += 5
-                st.balloons()
-                st.success("🎉 Du hast das Kuscheltier gegriffen! +5 Punkte!")
-                st.session_state.greif_versuche = 0
+            elif wurf == 1:
+                st.warning("-2 Punkte")
+                st.session_state.punkte -= 2
             else:
-                st.session_state.greif_versuche -= 1
-                st.warning(f"🧤 Verfehlt! Noch {st.session_state.greif_versuche} Versuche.")
-                if st.session_state.greif_versuche == 0:
-                    st.error(f"😢 Leider verloren. Richtige Position: X={st.session_state.greif_x}, Y={st.session_state.greif_y}")
-            save_points(name, st.session_state.punkte)
+                st.info("+1 Punkt")
+                st.session_state.punkte += 1
 
-    elif spiel == "Punktestand anzeigen 📊":
-        st.metric(label="📊 Dein aktueller Punktestand", value=st.session_state.punkte)
-        save_points(name, st.session_state.punkte)
+    elif spiel == "🪙 Münzwurf":
+        if st.button("🪙 Münze werfen"):
+            ergebnis = choice(["Kopf", "Zahl"])
+            st.write(f"Die Münze zeigt: **{ergebnis}**")
+            if ergebnis == "Kopf":
+                st.session_state.punkte += 2
+                st.success("+2 Punkte")
+            else:
+                st.session_state.punkte -= 1
+                st.error("-1 Punkt")
+
+    elif spiel == "🎰 Slot Maschine":
+        if st.button("🎰 Drehen"):
+            symbole = ["🍒", "🍋", "🔔", "⭐", "💎"]
+            spalte = [choice(symbole) for _ in range(3)]
+            st.write(f"{' | '.join(spalte)}")
+            if len(set(spalte)) == 1:
+                st.balloons()
+                st.session_state.punkte += 10
+                st.success("Jackpot! +10 Punkte")
+            elif len(set(spalte)) == 2:
+                st.session_state.punkte += 4
+                st.info("Zwei gleiche! +4 Punkte")
+            else:
+                st.session_state.punkte -= 3
+                st.warning("Leider nichts! -3 Punkte")
+
+    elif spiel == "💣 Bombenzahl":
+        if "bombenzahl" not in st.session_state:
+            st.session_state.bombenzahl = randint(1, 10)
+            st.session_state.bombenzahlen = list(range(1, 11))
+
+        if st.session_state.bombenzahlen:
+            zahl = st.selectbox("Wähle eine Zahl (1–10):", st.session_state.bombenzahlen)
+            if st.button("💣 Testen"):
+                if zahl == st.session_state.bombenzahl:
+                    st.error("💥 Boom! Du hast die Bombe getroffen!")
+                    st.session_state.punkte -= 5
+                    st.session_state.bombenzahlen = []
+                else:
+                    st.success("✅ Sicher! +1 Punkt")
+                    st.session_state.punkte += 1
+                    st.session_state.bombenzahlen.remove(zahl)
+        else:
+            if st.button("🔁 Neues Spiel starten"):
+                st.session_state.bombenzahl = randint(1, 10)
+                st.session_state.bombenzahlen = list(range(1, 11))
+                st.rerun()
+
+    elif spiel == "🤖 Greifautomat":
+        if st.button("🤖 Start"):
+            gewinn = choice([True, False, False])
+            if gewinn:
+                st.success("🎁 Du hast ein Geschenk gezogen! +7 Punkte")
+                st.session_state.punkte += 7
+            else:
+                st.warning("😞 Leider leer. -2 Punkte")
+                st.session_state.punkte -= 2
+
+    elif spiel == "📊 Punktestand speichern":
+        save_points(st.session_state.name, st.session_state.punkte)
+        st.success("💾 Punktestand gespeichert!")
 
