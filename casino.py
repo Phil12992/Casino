@@ -2,7 +2,7 @@ import streamlit as st
 from random import randint
 import os
 
-# Punkte pro Spieler laden oder 20 vergeben
+# Punktespeicherung
 def load_points(name):
     if not os.path.exists("points.txt"):
         return 20
@@ -12,7 +12,6 @@ def load_points(name):
                 return int(line.strip().split(":")[1])
     return 20
 
-# Punktestand speichern (ersetzen, nicht anhängen)
 def save_points(name, punkte):
     lines = []
     gefunden = False
@@ -20,247 +19,122 @@ def save_points(name, punkte):
         with open("points.txt", "r") as f:
             for line in f:
                 if line.startswith(name + ":"):
-                    lines.append(f"{name}:{punkte}\n")
+                    lines.append(f"{name}: {punkte}\n")
                     gefunden = True
                 else:
                     lines.append(line)
     if not gefunden:
-        lines.append(f"{name}:{punkte}\n")
+        lines.append(f"{name}: {punkte}\n")
     with open("points.txt", "w") as f:
         f.writelines(lines)
 
-# SPIELE
-def bombenzahl(punkte):
-    st.session_state.current_game = "bombenzahl"
-    st.session_state.bpunkte = 0
-    st.session_state.bombenzahl_num = randint(1, 10)
-
-def wuerfel_spiel(punkte):
-    st.session_state.punkte = punkte - 1
-    st.session_state.current_game = "wuerfel"
-    st.session_state.ergebnis = []
-    st.session_state.zahl_gewaehlt = False
-
-def muenzwurf(punkte):
-    st.session_state.punkte = punkte - 1
-    st.session_state.current_game = "muenzwurf"
-    st.session_state.muenzwurf = randint(1, 2)
-
-def slot_machine(punkte):
-    st.session_state.punkte = punkte - 2
-    st.session_state.current_game = "slot"
-    st.session_state.zahlen = []
-
-def greifautomaten(punkte):
-    st.session_state.punkte = punkte - 1
-    st.session_state.current_game = "greifautomat"
-    st.session_state.x = randint(1, 10)
-    st.session_state.y = randint(1, 10)
-    st.session_state.versuche = 3
-
 # Streamlit UI
-st.set_page_config(page_title="Premium Casino", page_icon="🎰", layout="centered")
+st.set_page_config(page_title="🎰 Online Casino", page_icon="🎲", layout="centered")
+st.title("🎰 Willkommen im Online-Casino!")
 
-# CSS für Premium-Look mit besserer Eingabeleiste
-st.markdown("""
-<style>
-    .stApp {
-        background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
-        color: white;
-    }
-    .css-1d391kg, .st-b7, .st-c0 {
-        background-color: rgba(0,0,0,0.7) !important;
-        border-radius: 10px;
-        padding: 20px;
-    }
-    .stButton>button {
-        background: linear-gradient(90deg, #FF4B4B, #FF8C00);
-        color: white;
-        border: none;
-        border-radius: 5px;
-        padding: 10px 20px;
-        font-weight: bold;
-    }
-    .stButton>button:hover {
-        background: linear-gradient(90deg, #FF8C00, #FF4B4B);
-        color: white;
-    }
-    .stTextInput>div>div>input {
-        background-color: rgba(255,255,255,0.2) !important;
-        color: white !important;
-        border: 2px solid #FF8C00 !important;
-        border-radius: 5px !important;
-        padding: 10px !important;
-        font-size: 16px !important;
-    }
-    .stMarkdown h1, .stMarkdown h2, .stMarkdown h3 {
-        color: white;
-        text-align: center;
-    }
-    .login-container {
-        max-width: 400px;
-        margin: 0 auto;
-        padding: 20px;
-    }
-</style>
-""", unsafe_allow_html=True)
+name = st.text_input("🧑 Bitte gib deinen Namen ein:", key="name_input")
 
-# Initialisierung der Session State Variablen
-if 'initialized' not in st.session_state:
-    st.session_state.name = ""
-    st.session_state.punkte = 20
-    st.session_state.current_game = None
-    st.session_state.initialized = True
+if name:
+    if "punkte" not in st.session_state:
+        st.session_state.punkte = load_points(name)
 
-# Login-Bereich mit verbessertem Layout
-if not st.session_state.name:
-    with st.container():
-        st.markdown('<div class="login-container">', unsafe_allow_html=True)
-        st.title("🎰 Premium Casino")
-        st.subheader("Bitte gib deinen Namen ein:")
-        
-        name_input = st.text_input("", placeholder="Dein Name", label_visibility="collapsed")
-        
-        if st.button("Spiel starten", key="login_button"):
-            if name_input.strip():
-                st.session_state.name = name_input.strip()
-                st.session_state.punkte = load_points(st.session_state.name)
+    st.success(f"Hallo {name}, du hast aktuell {st.session_state.punkte} Punkte.")
+
+    spiel = st.radio("🎮 Wähle dein Spiel:", [
+        "Würfel-Spiel 🎲",
+        "Münzwurf 🪙",
+        "Slot Maschine 🎰",
+        "Bombenzahl 💣",
+        "Greifautomat 🤖",
+        "Punktestand anzeigen 📊"
+    ])
+
+    st.markdown("---")
+
+    if spiel == "Würfel-Spiel 🎲":
+        st.session_state.punkte -= 1
+        save_points(name, st.session_state.punkte)
+        zahl1 = st.number_input("Wähle eine Zahl von 1 bis 6", 1, 6, step=1)
+        if st.button("🎲 Würfeln!"):
+            ergebnis = [randint(1, 6) for _ in range(6)]
+            anzahl = ergebnis.count(int(zahl1))
+            if anzahl == 0:
+                p1 = 0
+            elif anzahl < 4:
+                p1 = 1
+            elif anzahl < 6:
+                p1 = 2
             else:
-                st.warning("Bitte gib einen gültigen Namen ein!")
-        st.markdown('</div>', unsafe_allow_html=True)
-else:
-    # Hauptmenü
-    st.title(f"🎰 Willkommen, {st.session_state.name}!")
-    st.subheader(f"Dein aktueller Punktestand: {st.session_state.punkte} Punkte")
-    
-    if st.session_state.current_game is None:
-        col1, col2 = st.columns(2)
-        with col1:
-            if st.button("🎲 Würfel-Spiel (-1 Punkt)"):
-                wuerfel_spiel(st.session_state.punkte)
-            if st.button("🪙 Münzwurf (-1 Punkt)"):
-                muenzwurf(st.session_state.punkte)
-            if st.button("💣 Bombenzahl (-1 Punkt)"):
-                bombenzahl(st.session_state.punkte)
-        with col2:
-            if st.button("🎰 Slot Maschine (-2 Punkte)"):
-                slot_machine(st.session_state.punkte)
-            if st.button("🕹️ Greifautomaten (-1 Punkt)"):
-                greifautomaten(st.session_state.punkte)
-            if st.button("🏆 Punktestand speichern"):
-                save_points(st.session_state.name, st.session_state.punkte)
-                st.success("Punktestand gespeichert!")
-            if st.button("🚪 Casino verlassen"):
-                save_points(st.session_state.name, st.session_state.punkte)
-                st.session_state.name = ""
-                st.session_state.current_game = None
-    
-    # Spiellogik
-    elif st.session_state.current_game == "wuerfel":
-        st.subheader("🎲 Würfel-Spiel")
-        if not hasattr(st.session_state, 'zahl_gewaehlt') or not st.session_state.zahl_gewaehlt:
-            zahl = st.number_input("Wähle eine Zahl zwischen 1 und 6:", min_value=1, max_value=6)
-            if st.button("Würfeln"):
-                st.session_state.ergebnis = [randint(1, 6) for _ in range(6)]
-                st.session_state.zahl_gewaehlt = True
-                st.session_state.anzahl = st.session_state.ergebnis.count(zahl)
-                
-                if st.session_state.anzahl == 0:
-                    p1 = 0
-                elif st.session_state.anzahl < 4:
-                    st.session_state.punkte += 1
-                    p1 = 1
-                elif st.session_state.anzahl < 6:
-                    st.session_state.punkte += 2
-                    p1 = 2
-                elif st.session_state.anzahl == 6:
-                    st.session_state.punkte += 5
-                    p1 = 5
-                
-                st.session_state.punkte_gewonnen = p1
-        
-        if hasattr(st.session_state, 'zahl_gewaehlt') and st.session_state.zahl_gewaehlt:
-            st.write(f"Würfelergebnis: {st.session_state.ergebnis}")
-            st.write(f"Die gewählte Zahl wurde {st.session_state.anzahl} mal geworfen.")
-            st.success(f"Du hast {st.session_state.punkte_gewonnen} Punkte gewonnen!")
-            if st.button("Zurück zum Menü"):
-                save_points(st.session_state.name, st.session_state.punkte)
-                st.session_state.current_game = None
-    
-    elif st.session_state.current_game == "muenzwurf":
-        st.subheader("🪙 Münzwurf")
-        choice = st.radio("Wähle:", ("Kopf", "Zahl"))
-        if st.button("Münze werfen"):
-            if (choice == "Kopf" and st.session_state.muenzwurf == 1) or (choice == "Zahl" and st.session_state.muenzwurf == 2):
+                p1 = 5
+            st.session_state.punkte += p1
+            save_points(name, st.session_state.punkte)
+            st.info(f"🎯 Geworfen: {ergebnis}")
+            st.success(f"Die Zahl {zahl1} kam {anzahl}x vor → +{p1} Punkte")
+
+    elif spiel == "Münzwurf 🪙":
+        st.session_state.punkte -= 1
+        save_points(name, st.session_state.punkte)
+        wahl = st.radio("Kopf oder Zahl?", ["Kopf", "Zahl"])
+        if st.button("🪙 Münze werfen"):
+            ergebnis = randint(1, 2)
+            ergebnis_text = "Kopf" if ergebnis == 1 else "Zahl"
+            if wahl == ergebnis_text:
                 st.session_state.punkte += 1
-                st.success("Gewonnen! +1 Punkt")
+                st.success(f"✅ Die Münze zeigt {ergebnis_text}. Du gewinnst 1 Punkt!")
             else:
-                st.error("Verloren!")
-            st.write("Ergebnis:", "Kopf" if st.session_state.muenzwurf == 1 else "Zahl")
-            if st.button("Zurück zum Menü"):
-                save_points(st.session_state.name, st.session_state.punkte)
-                st.session_state.current_game = None
-    
-    elif st.session_state.current_game == "slot":
-        st.subheader("🎰 Slot Maschine")
-        if st.button("Hebel betätigen"):
-            st.session_state.zahlen = [randint(1, 6) for _ in range(3)]
-            if st.session_state.zahlen[0] == st.session_state.zahlen[1] == st.session_state.zahlen[2]:
+                st.warning(f"❌ Die Münze zeigt {ergebnis_text}. Leider kein Punkt.")
+            save_points(name, st.session_state.punkte)
+
+    elif spiel == "Slot Maschine 🎰":
+        if st.button("🎰 Hebel ziehen (-2 Punkte)"):
+            st.session_state.punkte -= 2
+            zahlen = [randint(1, 6) for _ in range(3)]
+            if zahlen[0] == zahlen[1] == zahlen[2]:
                 st.session_state.punkte += 10
-                st.success(f"Jackpot! +10 Punkte (Zahlen: {st.session_state.zahlen})")
+                st.balloons()
+                st.success(f"💥 JACKPOT! Zahlen: {zahlen} → +10 Punkte")
             else:
-                st.error(f"Verloren! (Zahlen: {st.session_state.zahlen})")
-        
-        if st.button("Zurück zum Menü"):
-            save_points(st.session_state.name, st.session_state.punkte)
-            st.session_state.current_game = None
-    
-    elif st.session_state.current_game == "bombenzahl":
-        st.subheader("💣 Bombenzahl")
-        if not hasattr(st.session_state, 'bpunkte'):
-            st.session_state.bpunkte = 0
-        
-        zahl = st.number_input("Wähle eine Zahl zwischen 1 und 10:", min_value=1, max_value=10)
-        if st.button("Zahl bestätigen"):
-            if zahl == st.session_state.bombenzahl_num:
+                st.warning(f"🤏 Keine drei gleichen. Gezogene Zahlen: {zahlen}")
+            save_points(name, st.session_state.punkte)
+
+    elif spiel == "Bombenzahl 💣":
+        if "bombenzahl_num" not in st.session_state:
+            st.session_state.bombenzahl_num = randint(1, 10)
+
+        zahl = st.number_input("Wähle eine Zahl zwischen 1 und 10", 1, 10, step=1)
+        if st.button("💣 Entschärfen"):
+            if int(zahl) == st.session_state.bombenzahl_num:
                 st.session_state.punkte -= 1
-                st.session_state.bpunkte -= 1
-                st.error("Die Bombe ist explodiert! -1 Punkt")
-                st.session_state.current_game = None
-                save_points(st.session_state.name, st.session_state.punkte)
+                st.warning("💥 Die Bombe ist explodiert! -1 Punkt")
+                st.session_state.bombenzahl_num = randint(1, 10)
             else:
                 st.session_state.punkte += 1
-                st.session_state.bpunkte += 1
-                st.success(f"Die Bombe ist nicht explodiert! Du hast {st.session_state.bpunkte} Punkte gewonnen.")
-                
-                if st.button("Weiter spielen"):
-                    pass
-                if st.button("Beenden"):
-                    save_points(st.session_state.name, st.session_state.punkte)
-                    st.session_state.current_game = None
-    
-    elif st.session_state.current_game == "greifautomat":
-        st.subheader("🕹️ Greifautomaten")
-        st.write(f"Du hast {st.session_state.versuche} Versuche übrig.")
-        
-        col1, col2 = st.columns(2)
-        with col1:
-            x = st.number_input("X-Koordinate (1-10):", min_value=1, max_value=10)
-        with col2:
-            y = st.number_input("Y-Koordinate (1-10):", min_value=1, max_value=10)
-        
-        if st.button("Versuchen"):
-            st.session_state.versuche -= 1
-            if x == st.session_state.x and y == st.session_state.y:
+                st.success("✅ Nicht explodiert! +1 Punkt")
+            save_points(name, st.session_state.punkte)
+
+    elif spiel == "Greifautomat 🤖":
+        if "greif_x" not in st.session_state:
+            st.session_state.greif_x = randint(1, 10)
+            st.session_state.greif_y = randint(1, 10)
+            st.session_state.greif_versuche = 3
+
+        x = st.number_input("🕹️ Zahl für X (1–10)", 1, 10, step=1, key="x")
+        y = st.number_input("🕹️ Zahl für Y (1–10)", 1, 10, step=1, key="y")
+
+        if st.button("🤖 Greifen"):
+            if int(x) == st.session_state.greif_x and int(y) == st.session_state.greif_y:
                 st.session_state.punkte += 5
-                st.success(f"Gewonnen! +5 Punkte (richtige Koordinaten: {st.session_state.x},{st.session_state.y})")
-                if st.button("Zurück zum Menü"):
-                    save_points(st.session_state.name, st.session_state.punkte)
-                    st.session_state.current_game = None
+                st.balloons()
+                st.success("🎉 Du hast das Kuscheltier gegriffen! +5 Punkte!")
+                st.session_state.greif_versuche = 0
             else:
-                st.error("Falsche Koordinaten!")
-                if st.session_state.versuche == 0:
-                    st.error(f"Keine Versuche mehr! Richtige Koordinaten: {st.session_state.x},{st.session_state.y}")
-                    if st.button("Zurück zum Menü"):
-                        save_points(st.session_state.name, st.session_state.punkte)
-                        st.session_state.current_game = None
+                st.session_state.greif_versuche -= 1
+                st.warning(f"🧤 Verfehlt! Noch {st.session_state.greif_versuche} Versuche.")
+                if st.session_state.greif_versuche == 0:
+                    st.error(f"😢 Leider verloren. Richtige Position: X={st.session_state.greif_x}, Y={st.session_state.greif_y}")
+            save_points(name, st.session_state.punkte)
+
+    elif spiel == "Punktestand anzeigen 📊":
+        st.metric(label="📊 Dein aktueller Punktestand", value=st.session_state.punkte)
+        save_points(name, st.session_state.punkte)
+
