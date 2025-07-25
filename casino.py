@@ -17,7 +17,7 @@ def check_login(name, passwort):
     with open("users.txt", "r") as f:
         for line in f:
             if ':' not in line:
-                continue  # ungültige Zeile überspringen
+                continue
             user, hashed = line.strip().split(":", 1)
             if user == name and hashed == hash_passwort(passwort):
                 return True
@@ -97,6 +97,10 @@ else:
     st.success(f"🎉 Eingeloggt als `{st.session_state.name}`")
     st.markdown(f"**Punktestand:** `{st.session_state.punkte}` Punkte")
 
+    def punkte_update(neuer_wert):
+        st.session_state.punkte = neuer_wert
+        save_points(st.session_state.name, st.session_state.punkte)
+
     spiel = st.selectbox("Wähle ein Spiel:", [
         "🎲 Würfel-Spiel",
         "🪙 Münzwurf",
@@ -111,10 +115,10 @@ else:
             wurf = randint(1, 6)
             st.write(f"Du hast eine **{wurf}** gewürfelt!")
             if wurf == 6:
-                st.session_state.punkte += 5
+                punkte_update(st.session_state.punkte + 5)
                 st.success("🎉 Du bekommst 5 Punkte!")
             else:
-                st.session_state.punkte -= 1
+                punkte_update(st.session_state.punkte - 1)
                 st.warning("❌ Leider nur -1 Punkt.")
 
     elif spiel == "🪙 Münzwurf":
@@ -123,10 +127,10 @@ else:
             ergebnis = choice(["Kopf", "Zahl"])
             st.write(f"Die Münze zeigt: **{ergebnis}**")
             if wahl == ergebnis:
-                st.session_state.punkte += 3
+                punkte_update(st.session_state.punkte + 3)
                 st.success("🎉 Richtig! +3 Punkte")
             else:
-                st.session_state.punkte -= 2
+                punkte_update(st.session_state.punkte - 2)
                 st.error("❌ Falsch! -2 Punkte")
 
     elif spiel == "🎰 Slot Maschine":
@@ -135,28 +139,28 @@ else:
             ergebnis = [choice(symbole) for _ in range(3)]
             st.write(" - ".join(ergebnis))
             if len(set(ergebnis)) == 1:
-                st.session_state.punkte += 5
+                punkte_update(st.session_state.punkte + 5)
                 st.success("🎉 Jackpot! +5 Punkte")
             elif len(set(ergebnis)) == 2:
-                st.session_state.punkte += 3
+                punkte_update(st.session_state.punkte + 3)
                 st.info("✨ Zwei gleiche! +3 Punkte")
             else:
-                st.session_state.punkte -= 5
+                punkte_update(st.session_state.punkte - 5)
                 st.error("🙈 Keine Übereinstimmung. -5 Punkte")
 
     elif spiel == "💣 Bombenzahl":
         if "bombenzahlen" not in st.session_state:
             st.session_state.bombenzahlen = list(range(1, 11))
-        bombe = 7  # Kann auch randomisiert werden, z.B. randint(1,10)
+        bombe = 7
         st.write(f"Wähle eine Zahl zwischen 1 und 10 (Bombe versteckt!)")
         for zahl in st.session_state.bombenzahlen:
             if st.button(f"Zahl {zahl}"):
                 if zahl == bombe:
-                    st.session_state.punkte -= 10
+                    punkte_update(st.session_state.punkte - 10)
                     st.error("💥 BOOM! Du hast die Bombe getroffen. -10 Punkte")
                     st.session_state.bombenzahlen = list(range(1, 11))
                 else:
-                    st.session_state.punkte += 2
+                    punkte_update(st.session_state.punkte + 2)
                     st.success(f"✅ Glück gehabt! +2 Punkte für Zahl {zahl}")
                     st.session_state.bombenzahlen.remove(zahl)
         if not st.session_state.bombenzahlen:
@@ -167,10 +171,10 @@ else:
         if st.button("🤖 Greifen"):
             chance = randint(1, 5)
             if chance == 1:
-                st.session_state.punkte += 15
+                punkte_update(st.session_state.punkte + 15)
                 st.success("🎁 Du hast ein Geschenk gegriffen! +15 Punkte")
             else:
-                st.session_state.punkte -= 4
+                punkte_update(st.session_state.punkte - 4)
                 st.error("🪙 Leider leer. -4 Punkte")
 
     elif spiel == "📊 Punktestand speichern":
