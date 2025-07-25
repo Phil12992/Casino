@@ -135,13 +135,13 @@ else:
             ergebnis = [choice(symbole) for _ in range(3)]
             st.write(" - ".join(ergebnis))
             if len(set(ergebnis)) == 1:
-                st.session_state.punkte += 10
+                st.session_state.punkte += 5
                 st.success("🎉 Jackpot! +10 Punkte")
             elif len(set(ergebnis)) == 2:
-                st.session_state.punkte += 5
+                st.session_state.punkte += 3
                 st.info("✨ Zwei gleiche! +5 Punkte")
             else:
-                st.session_state.punkte -= 3
+                st.session_state.punkte -= 5
                 st.error("🙈 Keine Übereinstimmung. -3 Punkte")
 
     elif spiel == "💣 Bombenzahl":
