@@ -5,7 +5,7 @@ import hashlib
 
 # ==== STREAMLIT SETUP ====
 st.set_page_config(page_title="🎰 Streamlit Casino", page_icon="🎲")
-st.title("🎰 Willkommen im Online Casino!")
+st.title("🎰 Willkommen in der Spielehalle!")
 
 # ==== HELPER FUNKTIONEN ====
 def hash_passwort(passwort):
