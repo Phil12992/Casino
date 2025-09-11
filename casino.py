@@ -133,7 +133,7 @@ else:
             winning_color = "Rot" if winning_number % 2 == 0 else "Schwarz"
             winning_parity = "Gerade" if winning_number % 2 == 0 else "Ungerade"
             
-            st.write(f"Das Gewinnzahl ist: **{winning_number}**")
+            st.write(f"Die Gewinnzahl ist: **{winning_number}**")
             st.write(f"Farbe: **{winning_color}**")
             st.write(f"Parität: **{winning_parity}**")
 
