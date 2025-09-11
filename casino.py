@@ -107,13 +107,14 @@ else:
         "🎰 Slot Maschine",
         "💣 Bombenzahl",
         "🤖 Greifautomat",
+        "🎰 Roulette",
         "📊 Punktestand speichern"
     ])
 
     if spiel == "🎲 Würfel-Spiel":
         if st.button("🎲 Würfeln"):
             wurf = randint(1, 6)
-            st.write(f"Du hast eine **{wurf}** gewürfelt!")
+            st.write(f"Du hast eine **{wurf}** geworfen!")
             if wurf == 6:
                 punkte_update(st.session_state.punkte + 5)
                 st.success("🎉 Du bekommst 5 Punkte!")
@@ -177,6 +178,22 @@ else:
                 punkte_update(st.session_state.punkte - 4)
                 st.error("🪙 Leider leer. -4 Punkte")
 
-    elif spiel == "📊 Punktestand speichern":
-        save_points(st.session_state.name, st.session_state.punkte)
-        st.success("💾 Punktestand gespeichert!")
+    elif spiel == "🎰 Roulette":
+        st.subheader("🎰 Roulette-Spiel")
+        bet_type = st.selectbox("Wähle deine Wette:", ["Nummer (0-36)", "Rot/Schwarz", "Gerade/Ungerade"])
+        bet_value = None
+        
+        if bet_type == "Nummer (0-36)":
+            bet_value = st.number_input("Wähle eine Zahl (0-36):", min_value=0, max_value=36, step=1)
+        
+        elif bet_type == "Rot/Schwarz":
+            bet_value = st.radio("Rot oder Schwarz?", ["Rot", "Schwarz"])
+        
+        elif bet_type == "Gerade/Ungerade":
+            bet_value = st.radio("Gerade oder Ungerade?", ["Gerade", "Ungerade"])
+        
+        if st.button("🎰 Drehen"):
+            # Spin the roulette wheel (0-36)
+            winning_number = randint(0, 36)
+            winning_color = "Rot" if winning_number % 2 == 0 else "Schwarz"
+            winning_parity = "Gerade" if winning_number % 2 == 
