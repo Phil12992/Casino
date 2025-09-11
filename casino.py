@@ -178,22 +178,48 @@ else:
                 punkte_update(st.session_state.punkte - 4)
                 st.error("🪙 Leider leer. -4 Punkte")
 
-    elif spiel == "🎰 Roulette":
-        st.subheader("🎰 Roulette-Spiel")
-        bet_type = st.selectbox("Wähle deine Wette:", ["Nummer (0-36)", "Rot/Schwarz", "Gerade/Ungerade"])
-        bet_value = None
+   elif spiel == "🎰 Roulette":
+    st.subheader("🎰 Roulette-Spiel")
+    bet_type = st.selectbox("Wähle deine Wette:", ["Nummer (0-36)", "Rot/Schwarz", "Gerade/Ungerade"])
+    bet_value = None
+    
+    if bet_type == "Nummer (0-36)":
+        bet_value = st.number_input("Wähle eine Zahl (0-36):", min_value=0, max_value=36, step=1)
+    
+    elif bet_type == "Rot/Schwarz":
+        bet_value = st.radio("Rot oder Schwarz?", ["Rot", "Schwarz"])
+    
+    elif bet_type == "Gerade/Ungerade":
+        bet_value = st.radio("Gerade oder Ungerade?", ["Gerade", "Ungerade"])
+    
+    if st.button("🎰 Drehen"):
+        # Spin the roulette wheel (0-36)
+        winning_number = randint(0, 36)
+        # Determine the color and parity of the winning number
+        winning_color = "Rot" if winning_number % 2 == 0 else "Schwarz"
+        winning_parity = "Gerade" if winning_number % 2 == 0 else "Ungerade"
         
-        if bet_type == "Nummer (0-36)":
-            bet_value = st.number_input("Wähle eine Zahl (0-36):", min_value=0, max_value=36, step=1)
-        
-        elif bet_type == "Rot/Schwarz":
-            bet_value = st.radio("Rot oder Schwarz?", ["Rot", "Schwarz"])
-        
-        elif bet_type == "Gerade/Ungerade":
-            bet_value = st.radio("Gerade oder Ungerade?", ["Gerade", "Ungerade"])
+        st.write(f"Das Gewinnzahl ist: **{winning_number}**")
+        st.write(f"Farbe: **{winning_color}**")
+        st.write(f"Parität: **{winning_parity}**")
+
+        # Check if the user's bet matches the winning number/color/parity
+        if bet_type == "Nummer (0-36)" and bet_value == winning_number:
+            punkte_update(st.session_state.punkte + 35)
+            st.success(f"🎉 Du hast auf {winning_number} gesetzt und gewonnen! +35 Punkte")
+        elif bet_type == "Rot/Schwarz" and bet_value == winning_color:
+            punkte_update(st.session_state.punkte + 10)
+            st.success(f"🎉 Die Farbe war {winning_color}. Du hast gewonnen! +10 Punkte")
+        elif bet_type == "Gerade/Ungerade" and bet_value == winning_parity:
+            punkte_update(st.session_state.punkte + 5)
+            st.success(f"🎉 Die Parität war {winning_parity}. Du hast gewonnen! +5 Punkte")
+        else:
+            punkte_update(st.session_state.punkte - 5)
+            st.error("❌ Du hast verloren. -5 Punkte")
         
         if st.button("🎰 Drehen"):
             # Spin the roulette wheel (0-36)
             winning_number = randint(0, 36)
             winning_color = "Rot" if winning_number % 2 == 0 else "Schwarz"
             winning_parity = "Gerade" if winning_number % 2 == 
+
